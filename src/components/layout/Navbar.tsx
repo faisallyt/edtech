@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -10,6 +10,7 @@ export const Navbar: React.FC = () => {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -19,8 +20,9 @@ export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-30 w-full bg-white shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex gap-2">
-          <Image src={Logo} alt="logo" width={30} />
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <Image src={Logo} alt="logo" width={30} height={30} />
           <Link href="/" className="flex items-center space-x-2">
             <span className="text-2xl font-bold text-blue-600">
               CodeCrafted
@@ -28,6 +30,7 @@ export const Navbar: React.FC = () => {
           </Link>
         </div>
 
+        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
           <Link
             href="/"
@@ -62,27 +65,21 @@ export const Navbar: React.FC = () => {
             </>
           ) : (
             <>
-              {user.role === "teacher" ? (
-                <Link
-                  href="/dashboard/teacher/dashboard"
-                  className={`text-sm font-medium ${
-                    pathname?.includes("/teacher")
-                      ? "text-blue-600"
-                      : "text-gray-700 hover:text-blue-600"
-                  }`}>
-                  Teacher Dashboard
-                </Link>
-              ) : (
-                <Link
-                  href="/dashboard/student/dashboard"
-                  className={`text-sm font-medium ${
-                    pathname?.includes("/student")
-                      ? "text-blue-600"
-                      : "text-gray-700 hover:text-blue-600"
-                  }`}>
-                  My Dashboard
-                </Link>
-              )}
+              <Link
+                href={
+                  user.role === "teacher"
+                    ? "/dashboard/teacher/dashboard"
+                    : "/dashboard/student/dashboard"
+                }
+                className={`text-sm font-medium ${
+                  pathname?.includes(
+                    user.role === "teacher" ? "/teacher" : "/student"
+                  )
+                    ? "text-blue-600"
+                    : "text-gray-700 hover:text-blue-600"
+                }`}>
+                {user.role === "teacher" ? "Teacher Dashboard" : "My Dashboard"}
+              </Link>
 
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
@@ -104,7 +101,9 @@ export const Navbar: React.FC = () => {
         </nav>
 
         {/* Mobile navigation button */}
-        <button className="block md:hidden">
+        <button
+          className="block md:hidden focus:outline-none"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -115,11 +114,86 @@ export const Navbar: React.FC = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
+              d={
+                isMobileMenuOpen
+                  ? "M6 18L18 6M6 6l12 12"
+                  : "M4 6h16M4 12h16M4 18h16"
+              }
             />
           </svg>
         </button>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-white shadow-md">
+          <nav className="flex flex-col space-y-4 p-4">
+            <Link
+              href="/"
+              className="text-sm font-medium text-gray-700 hover:text-blue-600"
+              onClick={() => setIsMobileMenuOpen(false)}>
+              Home
+            </Link>
+            <Link
+              href="/courses"
+              className="text-sm font-medium text-gray-700 hover:text-blue-600"
+              onClick={() => setIsMobileMenuOpen(false)}>
+              Courses
+            </Link>
+
+            {!user ? (
+              <>
+                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="ghost" size="sm" className="w-full">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button size="sm" className="w-full">
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href={
+                    user.role === "teacher"
+                      ? "/dashboard/teacher/dashboard"
+                      : "/dashboard/student/dashboard"
+                  }
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-sm font-medium text-gray-700 hover:text-blue-600">
+                  {user.role === "teacher"
+                    ? "Teacher Dashboard"
+                    : "My Dashboard"}
+                </Link>
+
+                <div className="flex items-center space-x-2">
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="h-8 w-8 rounded-full"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    {user.name}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    handleLogout();
+                    setIsMobileMenuOpen(false);
+                  }}>
+                  Logout
+                </Button>
+              </>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   );
 };
